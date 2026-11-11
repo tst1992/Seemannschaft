@@ -7,7 +7,7 @@
    (GitHub Pages) läuft.
    ========================================================================== */
 
-const BESTAND = "sss-trainer-v1";
+const BESTAND = "sss-trainer-v2";
 
 const DATEIEN = [
   "./",
@@ -16,6 +16,7 @@ const DATEIEN = [
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/icon-maskable-512.png",
+  "icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (ereignis) => {

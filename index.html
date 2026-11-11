@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<!-- Erzeugt von tools/bundle.mjs. Nicht von Hand ändern,
-     sondern src/index.html, css/, js/ oder data-src/ bearbeiten
-     und anschliessend `npm run build` ausführen. -->
+<!-- Ursprünglich von tools/bundle.mjs erzeugt. Die Quellordner sind nicht
+     mehr vorhanden, diese Datei wird deshalb direkt bearbeitet. -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SSS-Trainer Seemannschaft</title>
@@ -11,7 +10,7 @@
 <meta name="theme-color" content="#0A121C">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
 /* ==========================================================================
    KVR-Trainer
@@ -376,6 +375,25 @@ input#suche:focus{border-color:var(--stbd);outline:none}
 @media (min-width:520px){
   #modus-choices,#themen-choices,#unterthema-choices{grid-template-columns:1fr 1fr}
 }
+
+/* ---------- Nochmals fragen ---------- */
+.ghost.nochmals{margin-top:14px}
+.ghost.nochmals[aria-pressed="true"]{color:var(--stbd);border-color:var(--stbd);background:var(--stbd-dim)}
+.ghost.nochmals[aria-pressed="true"]::before{content:"✓ "}
+.wdh-marke{color:var(--brass)}
+
+/* ---------- Alle Fragen ---------- */
+.filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.filter-chip{
+  min-height:36px;padding:6px 13px;border-radius:999px;
+  background:var(--sea-850);border:1px solid var(--line-soft);color:var(--fog);
+  font:inherit;font-size:.84rem;cursor:pointer;transition:border-color .15s,background .15s;
+}
+.filter-chip:hover{border-color:var(--line)}
+.filter-chip[aria-checked="true"]{border-color:var(--stbd);background:var(--sea-800);color:var(--white-light)}
+.filter-chip small{font-family:var(--mono);color:var(--fog-dim);margin-left:6px;font-size:.74rem}
+.liste-gruppe{margin:22px 0 10px}
+.liste-gruppe:first-child{margin-top:4px}
 </style>
 </head>
 <body>
@@ -394,8 +412,8 @@ input#suche:focus{border-color:var(--stbd);outline:none}
     <button class="icon-btn" id="btn-fortschritt" type="button" title="Fortschritt" aria-label="Fortschritt">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg>
     </button>
-    <button class="icon-btn" id="btn-nachschlagen" type="button" title="Nachschlagen" aria-label="Nachschlagen">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <button class="icon-btn" id="btn-liste" type="button" title="Alle Fragen" aria-label="Alle Fragen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/></svg>
     </button>
     <button class="icon-btn" id="btn-einstellungen" type="button" title="Einstellungen" aria-label="Einstellungen">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5v.2a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H2a2 2 0 110-4h.1A1.7 1.7 0 003.6 9a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H8a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1h.2a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
@@ -475,6 +493,8 @@ input#suche:focus{border-color:var(--stbd);outline:none}
       <p class="eyebrow konzept-eyebrow">Wie war es wirklich?</p>
       <div class="choices row" id="selbst-choices" role="radiogroup" aria-label="Selbstbewertung"></div>
 
+      <p class="hint-note" id="wdh-note" hidden></p>
+      <button class="ghost nochmals" id="btn-nochmals" type="button" aria-pressed="false" hidden>Nochmals fragen</button>
       <button class="cta" id="btn-weiter" type="button">Weiter</button>
       <button class="ghost" id="btn-loesung" type="button">Musterlösung ansehen</button>
     </div>
@@ -509,14 +529,15 @@ input#suche:focus{border-color:var(--stbd);outline:none}
     <button class="ghost" id="btn-fortschritt-zurueck" type="button">Zurück</button>
   </section>
 
-  <!-- ---------- Nachschlagen ---------- -->
-  <section class="screen" id="screen-nachschlagen" hidden>
+  <!-- ---------- Alle Fragen ---------- -->
+  <section class="screen" id="screen-liste" hidden>
     <p class="eyebrow">Ohne Abfrage</p>
-    <h2 class="h-section">Nachschlagen</h2>
-    <p class="lede">Sucht in Fragen, Musterlösungen und Konzepten.</p>
+    <h2 class="h-section">Alle Fragen</h2>
+    <p class="lede">Themengebiet wählen, optional suchen. Antippen zeigt die Musterlösung.</p>
+    <div class="filter" id="liste-gebiete" role="radiogroup" aria-label="Themengebiet"></div>
     <label class="sr-only" for="suche">Suchbegriff</label>
     <input id="suche" type="search" placeholder="z. B. Treibanker, Squat, Leitner" autocomplete="off">
-    <p class="such-zahl" id="such-zahl"></p>
+    <p class="such-zahl" id="such-zahl" aria-live="polite"></p>
     <div id="such-treffer"></div>
   </section>
 
@@ -13465,6 +13486,16 @@ const MODI = {
 /** Anzahl Fragen im Prüfungsmix. */
 const MIX_UMFANG = 10;
 
+/* Wiederholung innerhalb einer Runde (wie SeeMann25):
+   Nicht richtig beantwortete Fragen kommen nach ABSTAND anderen Fragen
+   nochmals, höchstens MAX_WDH-mal. Richtige Fragen kommen auf Wunsch
+   („Nochmals fragen“) nach WUNSCH_MIN bis WUNSCH_MAX anderen Fragen nochmals.
+   Für Lernstand und Rundenergebnis zählt nur der erste Versuch. */
+const MAX_WDH = 2;
+const ABSTAND = 3;
+const WUNSCH_MIN = 3;
+const WUNSCH_MAX = 6;
+
 /** Höchstzahl der Hinweise je Frage. */
 const MAX_HINWEISE = 2;
 
@@ -13967,6 +13998,10 @@ const zustand = {
   bewertet: null,
   selbsturteil: null,
   vorigerSchirm: "screen-start",
+  versuche: new Map(), // id -> { wdh, gebucht, wunsch }
+  nochmals: false,
+  wiederholung: null, // null | "wdh" | "wunsch"
+  listeGebiet: "alle",
 };
 
 /* ---------- Hilfsfunktionen ---------- */
@@ -14126,9 +14161,10 @@ function rundeStarten() {
     return;
   }
 
-  zustand.runde = ids;
+  zustand.runde = ids.slice();
   zustand.index = 0;
   zustand.ergebnisse = [];
+  zustand.versuche = new Map(ids.map((id) => [id, { wdh: 0, gebucht: false, wunsch: false }]));
   frageZeigen();
 }
 
@@ -14183,12 +14219,27 @@ function frageZeigen() {
   zustand.hinweise = 0;
   zustand.bewertet = null;
   zustand.selbsturteil = null;
+  zustand.nochmals = false;
+
+  const v = zustand.versuche.get(id);
+  zustand.wiederholung = !v || !v.gebucht ? null : v.wunsch ? "wunsch" : "wdh";
+  if (v) v.wunsch = false;
 
   const nummer = zustand.index + 1;
   $("meter-fill").style.width = `${(zustand.index / zustand.runde.length) * 100}%`;
-  $("frage-label").textContent =
+  const label = $("frage-label");
+  label.textContent =
     `Frage ${nummer} von ${zustand.runde.length} · ${gebietTitel(frage.themengebiet)}` +
     (frage.punkte ? ` · ${frage.punkte} Punkte` : "");
+  if (zustand.wiederholung) {
+    const marke = document.createElement("span");
+    marke.className = "wdh-marke";
+    marke.textContent =
+      zustand.wiederholung === "wunsch"
+        ? " · Nochmals auf Wunsch"
+        : ` · Wiederholung ${v.wdh} von ${MAX_WDH}`;
+    label.appendChild(marke);
+  }
   $("frage-text").textContent = frage.frage;
 
   const anmerkung = $("frage-anmerkung");
@@ -14201,6 +14252,9 @@ function frageZeigen() {
   $("hinweis-chips").innerHTML = "";
   $("hinweis-note").hidden = true;
   $("rueckmeldung").hidden = true;
+  $("btn-nochmals").hidden = true;
+  $("btn-nochmals").setAttribute("aria-pressed", "false");
+  $("wdh-note").hidden = true;
   $("btn-pruefen").hidden = false;
   $("btn-hinweis").hidden = false;
   $("btn-hinweis").disabled = false;
@@ -14263,7 +14317,9 @@ function rueckmeldungZeigen(ergebnis) {
 
   auswahlBauen($("selbst-choices"), SELBSTURTEILE, zustand.selbsturteil, (id) => {
     zustand.selbsturteil = id;
+    wiederholungAnzeigen();
   });
+  wiederholungAnzeigen();
 
   $("btn-pruefen").hidden = true;
   $("btn-hinweis").hidden = true;
@@ -14298,36 +14354,103 @@ function hinweisGeben() {
   if (zustand.hinweise >= MAX_HINWEISE) $("btn-hinweis").disabled = true;
 }
 
+/** Urteil, das nach der Selbstbewertung gilt. */
+function geltendesUrteil() {
+  const urteil = zustand.selbsturteil || (zustand.bewertet && zustand.bewertet.urteil);
+  return urteil === "leer" ? "falsch" : urteil;
+}
+
+function versuch(id) {
+  if (!zustand.versuche.has(id)) {
+    zustand.versuche.set(id, { wdh: 0, gebucht: false, wunsch: false });
+  }
+  return zustand.versuche.get(id);
+}
+
+function kommtWieder() {
+  return versuch(zustand.aktuell.id).wdh < MAX_WDH;
+}
+
+/** Knopf „Nochmals fragen“ nur bei richtig, sonst Hinweis auf die Wiederholung. */
+function wiederholungAnzeigen() {
+  const richtig = geltendesUrteil() === "richtig";
+  const knopf = $("btn-nochmals");
+  knopf.hidden = !richtig;
+  if (!richtig) {
+    zustand.nochmals = false;
+    knopf.setAttribute("aria-pressed", "false");
+  }
+  const note = $("wdh-note");
+  note.hidden = richtig;
+  note.textContent = kommtWieder()
+    ? "Die Frage kommt in dieser Runde später nochmals."
+    : "Die Frage bleibt in dieser Runde offen.";
+  weiterBeschriften();
+}
+
+function weiterBeschriften() {
+  const wieder = geltendesUrteil() === "richtig" ? zustand.nochmals : kommtWieder();
+  const letzte = zustand.index + 1 >= zustand.runde.length;
+  $("btn-weiter").textContent = letzte && !wieder ? "Zum Ergebnis" : "Weiter";
+}
+
+function nochmalsUmschalten() {
+  zustand.nochmals = !zustand.nochmals;
+  $("btn-nochmals").setAttribute("aria-pressed", String(zustand.nochmals));
+  weiterBeschriften();
+}
+
+function einreihen(id, abstand) {
+  const pos = Math.min(zustand.index + 1 + abstand, zustand.runde.length);
+  zustand.runde.splice(pos, 0, id);
+}
+
+/** Bucht nur den ersten Versuch und reiht die Frage bei Bedarf erneut ein. */
+function abschliessen(id, gebucht, eintrag) {
+  const v = versuch(id);
+  if (!v.gebucht) {
+    v.gebucht = true;
+    ergebnisBuchen(id, gebucht === "uebersprungen" ? "falsch" : gebucht, eintrag.prozent);
+    zustand.ergebnisse.push({ id, urteil: gebucht, ...eintrag });
+  }
+
+  let wieder = false;
+  if (gebucht === "richtig") {
+    if (zustand.nochmals) {
+      const abstand = WUNSCH_MIN + Math.floor(Math.random() * (WUNSCH_MAX - WUNSCH_MIN + 1));
+      einreihen(id, abstand);
+      v.wunsch = true;
+      wieder = true;
+    }
+  } else if (v.wdh < MAX_WDH) {
+    // Auch eine Wiederholung auf Wunsch, die nicht mehr sitzt, folgt den normalen Regeln.
+    v.wdh += 1;
+    einreihen(id, ABSTAND);
+    wieder = true;
+  }
+
+  zustand.index += 1;
+  if (zustand.index >= zustand.runde.length) ergebnisZeigen();
+  else frageZeigen();
+  return wieder;
+}
+
 function weiter() {
   const frage = zustand.aktuell;
   const ergebnis = zustand.bewertet;
-  const urteil = zustand.selbsturteil || ergebnis.urteil;
-  const gebucht = urteil === "leer" ? "falsch" : urteil;
-
-  ergebnisBuchen(frage.id, gebucht, ergebnis.prozent);
-  zustand.ergebnisse.push({
-    id: frage.id,
-    urteil: gebucht,
+  abschliessen(frage.id, geltendesUrteil(), {
     automatisch: ergebnis.urteil,
     prozent: ergebnis.prozent,
   });
-
-  zustand.index += 1;
-  if (zustand.index >= zustand.runde.length) ergebnisZeigen();
-  else frageZeigen();
 }
 
 function ueberspringen() {
-  ergebnisBuchen(zustand.aktuell.id, "falsch", 0);
-  zustand.ergebnisse.push({
-    id: zustand.aktuell.id,
-    urteil: "uebersprungen",
+  zustand.nochmals = false;
+  const wieder = abschliessen(zustand.aktuell.id, "uebersprungen", {
     automatisch: "leer",
     prozent: 0,
   });
-  zustand.index += 1;
-  if (zustand.index >= zustand.runde.length) ergebnisZeigen();
-  else frageZeigen();
+  toast(wieder ? "Übersprungen, kommt später nochmals." : "Übersprungen, bleibt offen.");
 }
 
 /* ---------- Ergebnis der Runde ---------- */
@@ -14340,7 +14463,7 @@ function ergebnisZeigen() {
 
   $("ergebnis-score").textContent = `${quote} %`;
   $("ergebnis-zahl").textContent = `${richtig}/${gesamt}`;
-  $("ergebnis-detail").textContent = `richtig · ${teilweise} teilweise`;
+  $("ergebnis-detail").textContent = `richtig · ${teilweise} teilweise · erster Versuch`;
 
   const liste = $("misslist");
   liste.innerHTML = "";
@@ -14489,45 +14612,95 @@ function fortschrittZeigen() {
 
 /* ---------- Nachschlagen ---------- */
 
-function nachschlagenZeigen() {
-  krumeSetzen("Nachschlagen");
-  schirmZeigen("screen-nachschlagen");
-  $("suche").focus();
-  suchen();
-}
-
-function suchen() {
-  const begriff = $("suche").value.trim().toLowerCase();
-  const behaelter = $("such-treffer");
-  behaelter.innerHTML = "";
-
-  if (begriff.length < 2) {
-    $("such-zahl").textContent = "Mindestens zwei Zeichen eingeben.";
+function listeZeigen() {
+  if (!$("screen-frage").hidden) {
+    toast("Während der Runde nicht verfügbar.");
     return;
   }
+  krumeSetzen("Alle Fragen");
+  gebieteFilterBauen();
+  schirmZeigen("screen-liste");
+  listeRendern();
+}
 
-  const treffer = zustand.daten.fragen.filter((f) => {
-    const heuhaufen = [
+function gebieteFilterBauen() {
+  const behaelter = $("liste-gebiete");
+  behaelter.innerHTML = "";
+  const eintraege = [
+    { id: "alle", titel: "Alle", zahl: zustand.daten.fragen.length },
+    ...zustand.daten.themengebiete.map((g) => ({
+      id: g.id,
+      titel: g.titel,
+      zahl: zustand.daten.fragen.filter((f) => f.themengebiet === g.id).length,
+    })),
+  ];
+  for (const e of eintraege) {
+    const knopf = document.createElement("button");
+    knopf.type = "button";
+    knopf.className = "filter-chip";
+    knopf.setAttribute("role", "radio");
+    knopf.setAttribute("aria-checked", String(e.id === zustand.listeGebiet));
+    knopf.textContent = e.titel;
+    const zahl = document.createElement("small");
+    zahl.textContent = e.zahl;
+    knopf.appendChild(zahl);
+    knopf.addEventListener("click", () => {
+      zustand.listeGebiet = e.id;
+      for (const k of behaelter.children) k.setAttribute("aria-checked", String(k === knopf));
+      listeRendern();
+    });
+    behaelter.appendChild(knopf);
+  }
+}
+
+/** Suchform: wie normalisieren, aber ohne Satzgrenzen. */
+function suchform(text) {
+  return normalisieren(text).split(SATZGRENZE).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function heuhaufen(f) {
+  return suchform(
+    [
       f.frage,
       f.musterloesung.einleitung || "",
       ...f.musterloesung.bloecke.flatMap((b) => [b.titel || "", b.text || "", ...(b.punkte || [])]),
       ...f.konzepte.map((k) => k.label),
-    ]
-      .join(" ")
-      .toLowerCase();
-    return heuhaufen.includes(begriff);
-  });
+    ].join(" ")
+  );
+}
 
-  $("such-zahl").textContent =
-    treffer.length === 1 ? "1 Frage gefunden." : `${treffer.length} Fragen gefunden.`;
+function listeRendern() {
+  const begriff = suchform($("suche").value);
+  const behaelter = $("such-treffer");
+  behaelter.innerHTML = "";
 
-  for (const frage of treffer.slice(0, 60)) {
+  const imGebiet = zustand.daten.fragen.filter(
+    (f) => zustand.listeGebiet === "alle" || f.themengebiet === zustand.listeGebiet
+  );
+  const treffer = begriff ? imGebiet.filter((f) => heuhaufen(f).includes(begriff)) : imGebiet;
+
+  $("such-zahl").textContent = begriff
+    ? `${treffer.length} von ${imGebiet.length} Fragen`
+    : `${imGebiet.length} Fragen`;
+
+  let gruppe = null;
+  for (const frage of treffer) {
+    if (zustand.listeGebiet === "alle" && frage.themengebiet !== gruppe) {
+      gruppe = frage.themengebiet;
+      const h = document.createElement("p");
+      h.className = "eyebrow liste-gruppe";
+      h.textContent = gebietTitel(gruppe);
+      behaelter.appendChild(h);
+    }
     const zeile = document.createElement("button");
     zeile.type = "button";
     zeile.className = "such-zeile";
     zeile.innerHTML = "<span></span><small></small>";
     zeile.querySelector("span").textContent = frage.frage;
-    zeile.querySelector("small").textContent = `${gebietTitel(frage.themengebiet)} · ${frage.quellnummer}`;
+    zeile.querySelector("small").textContent =
+      (zustand.listeGebiet === "alle" ? "" : `${gebietTitel(frage.themengebiet)} · `) +
+      frage.quellnummer +
+      (frage.punkte ? ` · ${frage.punkte} Punkte` : "");
     zeile.addEventListener("click", () => {
       zustand.aktuell = frage;
       loesungOeffnen();
@@ -14611,7 +14784,7 @@ function zurueck() {
       break;
     case "screen-ergebnis":
     case "screen-fortschritt":
-    case "screen-nachschlagen":
+    case "screen-liste":
       startAufbauen();
       break;
     default:
@@ -14643,12 +14816,13 @@ function verdrahten() {
   $("btn-fortschritt").addEventListener("click", fortschrittZeigen);
   $("btn-fortschritt-2").addEventListener("click", fortschrittZeigen);
   $("btn-fortschritt-zurueck").addEventListener("click", startAufbauen);
-  $("btn-nachschlagen").addEventListener("click", nachschlagenZeigen);
+  $("btn-liste").addEventListener("click", listeZeigen);
+  $("btn-nochmals").addEventListener("click", nochmalsUmschalten);
   $("btn-einstellungen").addEventListener("click", einstellungenOeffnen);
   $("btn-nochmal").addEventListener("click", rundeStarten);
   $("btn-zum-start").addEventListener("click", startAufbauen);
 
-  $("suche").addEventListener("input", suchen);
+  $("suche").addEventListener("input", listeRendern);
 
   $("btn-export").addEventListener("click", lernstandAusgeben);
   $("btn-import").addEventListener("click", () => $("import-datei").click());

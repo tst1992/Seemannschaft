@@ -10,6 +10,27 @@ Lernstand bleibt im Browser.
 
 ---
 
+## Neu: Nochmals fragen und Alle Fragen
+
+- **Nochmals fragen:** Nach einer richtigen Antwort (nach der Selbstbewertung
+  „Sass“) erscheint der Knopf „Nochmals fragen“. Ist er aktiviert, kommt die
+  Frage nach drei bis sechs anderen Fragen in derselben Runde nochmals.
+- **Automatische Wiederholung:** Nicht richtig beantwortete oder übersprungene
+  Fragen kommen nach drei anderen Fragen nochmals, höchstens zweimal.
+- Für Lernstand, Wiedervorlage und Rundenergebnis zählt **nur der erste
+  Versuch**. Wiederholungen sind reines Üben.
+- **Alle Fragen:** Das Listen-Symbol oben rechts (ersetzt „Nachschlagen“)
+  zeigt alle Fragen, wählbar nach Themengebiet, mit optionaler Suche.
+  Antippen öffnet die Musterlösung. Während einer Runde ist die Liste gesperrt.
+
+**Hinweis:** Die Quellordner (`src/`, `js/`, `css/`, `data-src/`, `tools/`,
+`tests/`) sind nicht mehr vorhanden. Änderungen werden deshalb direkt in
+`index.html` gemacht. Die Abschnitte zu `npm run build` unten gelten nicht mehr.
+
+Die App-Symbole liegen in `icons/`, die Vorlage ist `icons/icon.svg`.
+
+---
+
 ## Veröffentlichen über GitHub Pages
 
 1. Neues Repository anlegen und den Inhalt dieses Ordners hineinlegen.
