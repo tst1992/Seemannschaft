@@ -17,7 +17,7 @@ Lernstand bleibt im Browser.
   Frage nach drei bis sechs anderen Fragen in derselben Runde nochmals.
 - **Automatische Wiederholung:** Nicht richtig beantwortete oder übersprungene
   Fragen kommen nach drei anderen Fragen nochmals, höchstens zweimal.
-- Für Lernstand, Wiedervorlage und Rundenergebnis zählt **nur der erste
+- Für Lernstand, Auswahl und Rundenergebnis zählt **nur der erste
   Versuch**. Wiederholungen sind reines Üben.
 - **Alle Fragen:** Das Listen-Symbol oben rechts (ersetzt „Nachschlagen“)
   zeigt alle Fragen, wählbar nach Themengebiet, mit optionaler Suche.
@@ -77,7 +77,7 @@ sw.js                      Offlinebetrieb
 css/styles.css             Vorgegebenes Stylesheet plus Ergänzungsblock am Ende
 js/config.js               Schwellen, Modi, Konstanten
 js/bewertung.js            Bewertung freier Antworten, ohne DOM-Zugriff
-js/speicher.js             Lernstand, Wiedervorlage, Aus- und Einlesen
+js/speicher.js             Lernstand, Auswahl, Aus- und Einlesen
 js/app.js                  Ablauf und Oberfläche
 data-src/*.json            Neun Quelldateien, eine je Themengebiet
 data/fragen.json           Gebaute Gesamtdatei, wird von der App geladen
@@ -203,12 +203,23 @@ Die Automatik erkennt Begriffe, keine Argumente. Bei Seemannschaft zählt aber
 die Begründung. Deshalb folgt nach jeder Frage eine dreistufige
 Selbstbewertung, und **sie** bestimmt den Lernstand.
 
-### Wiedervorlage
+### Lernstand und Auswahl (rundenbasiert)
 
-Fünf Stufen, Wiedervorlage nach 0, 1, 3, 7 und 21 Tagen. Richtig steigt eine
-Stufe, teilweise hält, falsch setzt auf null zurück. Die Auswahl innerhalb
-einer Runde ist nicht rein zufällig, sondern gewichtet: zuletzt falsch
-beantwortete und noch nie gestellte Fragen kommen häufiger.
+Die frühere Wiedervorlage nach Tagen (Stufen 0–4) ist ersetzt. Je Frage
+speichert die App, wie oft und in welcher Runde sie zuletzt gestellt wurde,
+und die Selbstbewertung der letzten fünf **ersten** Versuche: richtig 1,
+teilweise 0,5, nicht gewusst und übersprungen 0. Ein Lernstand der früheren
+Fassung wird übernommen: das letzte Ergebnis wird erster Eintrag.
+
+Auswahl: Noch nie gestellte Fragen kommen zuerst. Danach gilt Priorität =
+Runden seit dem letzten Stellen × Gewicht. Das Gewicht reicht von 1
+(zuletzt immer richtig) bis 4 (immer falsch), markierte Fragen +1. Keine
+Frage setzt länger als 3 × (Bestand ÷ Plätze, aufgerundet) Runden aus. In
+einer Simulation über 150 Prüfungsmix-Runden kamen schwache Fragen etwa
+dreimal so oft wie sichere, und alle 147 Fragen wurden gestellt.
+
+Die Fortschrittsansicht zeigt je Frage die Quote der letzten fünf ersten
+Versuche (grün sicher ab 80 %, gelb ab 40 %, rot darunter, grau neu).
 
 ---
 
@@ -216,9 +227,9 @@ beantwortete und noch nie gestellte Fragen kommen häufiger.
 
 | Art          | Umfang                                                          |
 | ------------ | --------------------------------------------------------------- |
-| Themengebiet | alle Fragen eines Gebiets, wahlweise auf ein Unterthema begrenzt |
-| Prüfungsmix  | 10 Fragen, je Gebiet eine, die zehnte aus dem schwächsten Gebiet |
-| Wiederholung | fällige Fragen aus der Wiedervorlage                            |
+| Themengebiet | alle Fragen eines Gebiets (wahlweise ein Unterthema), Reihenfolge nach Priorität |
+| Prüfungsmix  | 10 Fragen, je Gebiet die mit der höchsten Priorität, die zehnte aus dem schwächsten Gebiet |
+| Wiederholung | die 20 schwächsten (unter 80 %) oder überfälligen Fragen       |
 | Markierte    | selbst vorgemerkte Fragen                                       |
 
 Im Prüfungsmix kommt höchstens eine Frage je Dublettengruppe vor.

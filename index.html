@@ -521,9 +521,10 @@ input#suche:focus{border-color:var(--stbd);outline:none}
     <h2 class="h-section">Fortschritt</h2>
     <p class="lede" id="fortschritt-lede"></p>
     <div class="legend">
-      <span><i class="sw good"></i>überwiegend richtig</span>
+      <span><i class="sw good"></i>sicher</span>
       <span><i class="sw mid"></i>teilweise</span>
-      <span><i class="sw bad"></i>noch offen</span>
+      <span><i class="sw bad"></i>unsicher</span>
+      <span><i class="sw"></i>neu</span>
     </div>
     <div id="fortschritt-inhalt"></div>
     <button class="ghost" id="btn-fortschritt-zurueck" type="button">Zurück</button>
@@ -13479,7 +13480,7 @@ const STRENGEN = [
 const MODI = {
   themengebiet: { titel: "Themengebiet", hinweis: "Ein Gebiet gezielt üben" },
   pruefungsmix: { titel: "Prüfungsmix", hinweis: "10 Fragen quer über alle Gebiete" },
-  wiederholung: { titel: "Wiederholung", hinweis: "Fällige Fragen aus der Wiedervorlage" },
+  wiederholung: { titel: "Wiederholung", hinweis: "Die 20 schwächsten oder überfälligen Fragen" },
   markierte: { titel: "Markierte", hinweis: "Selbst vorgemerkte Fragen" },
 };
 
@@ -13499,17 +13500,17 @@ const WUNSCH_MAX = 6;
 /** Höchstzahl der Hinweise je Frage. */
 const MAX_HINWEISE = 2;
 
-/** Wiedervorlage nach Stufe, in Tagen. */
-const LEITNER_TAGE = [0, 1, 3, 7, 21];
-
-/** Gewichte für die Fragenauswahl. Höher heisst häufiger. */
-const GEWICHTE = {
-  nieBeantwortet: 3,
-  zuletztFalsch: 5,
-  zuletztTeilweise: 3,
-  zuletztRichtig: 1,
-  markiert: 2,
-};
+/* Lernstand und Auswahl (rundenbasiert):
+   Je Frage zählen die letzten VERLAUF_MAX ersten Versuche (Selbstbewertung:
+   richtig 1, teilweise 0,5, nicht gewusst und übersprungen 0).
+   Priorität = Runden seit dem letzten Stellen × Gewicht, Gewicht 1 (sicher)
+   bis 1 + FEHLER_FAKTOR (immer falsch), markierte Fragen +1.
+   Nie gestellte und überfällige Fragen (Pause ≥ 3 × Bestand ÷ Plätze) zuerst. */
+const VERLAUF_MAX = 5;
+const FEHLER_FAKTOR = 3;
+const PUNKTE = { richtig: 1, teilweise: 0.5, falsch: 0 };
+/** Fragen im Modus Wiederholung. */
+const WDH_UMFANG = 20;
 
 /** Selbstbewertung, die das automatische Urteil überschreibt. */
 const SELBSTURTEILE = [
@@ -13738,13 +13739,12 @@ function hinweisWaehlen(ergebnis) {
 
 /* ----- js/speicher.js ----- */
 /* ==========================================================================
-   Lernstand: Leitner-Stufen, Statistik, Markierungen, Export und Import.
+   Lernstand: rundenbasierte Auswahl, Statistik, Markierungen, Export und Import.
    Fällt auf einen reinen Arbeitsspeicher zurück, wenn localStorage nicht
    verfügbar ist (privater Modus, eingeschränkte Umgebungen).
    ========================================================================== */
 
 
-const TAG_MS = 24 * 60 * 60 * 1000;
 
 let speicherVorhanden = true;
 let ersatz = null;
@@ -13753,7 +13753,7 @@ function lesen() {
   if (speicherVorhanden) {
     try {
       const roh = window.localStorage.getItem(APP.speicherschluessel);
-      return roh ? JSON.parse(roh) : leererStand();
+      return roh ? migrieren(JSON.parse(roh)) : leererStand();
     } catch {
       speicherVorhanden = false;
     }
@@ -13774,9 +13774,29 @@ function schreiben(stand) {
   ersatz = stand;
 }
 
+/** Übernimmt einen Lernstand der Fassung mit Tagesstufen: das letzte
+    Ergebnis wird erster Eintrag des neuen Verlaufs. */
+function migrieren(stand) {
+  if (!stand || typeof stand !== "object") return leererStand();
+  if (stand.version >= 2) return stand;
+  stand.fragen = stand.fragen || {};
+  stand.runden = stand.runden || 0;
+  for (const e of Object.values(stand.fragen)) {
+    if (e.versuche && !Array.isArray(e.punkte)) {
+      e.punkte = [PUNKTE[e.letztesUrteil] ?? 0];
+      e.runde = 0;
+    }
+    delete e.stufe;
+    delete e.faellig;
+  }
+  stand.version = 2;
+  return stand;
+}
+
 function leererStand() {
   return {
-    version: 1,
+    version: 2,
+    runden: 0,
     einstellungen: { strenge: "normal" },
     fragen: {},
     verlauf: [],
@@ -13802,8 +13822,8 @@ function fragenstand(id) {
   const stand = lesen();
   return (
     stand.fragen[id] || {
-      stufe: 0,
-      faellig: 0,
+      punkte: [],
+      runde: null,
       versuche: 0,
       richtig: 0,
       letztesUrteil: null,
@@ -13812,7 +13832,7 @@ function fragenstand(id) {
   );
 }
 
-/** Schreibt das Ergebnis eines Versuchs fort und setzt die Wiedervorlage. */
+/** Schreibt das Ergebnis des ersten Versuchs einer Runde fort. */
 function ergebnisBuchen(id, urteil, prozent) {
   const stand = lesen();
   const eintrag = stand.fragen[id] || fragenstand(id);
@@ -13822,16 +13842,9 @@ function ergebnisBuchen(id, urteil, prozent) {
   eintrag.letztesProzent = prozent;
   eintrag.zuletzt = Date.now();
 
-  if (urteil === "richtig") {
-    eintrag.richtig += 1;
-    eintrag.stufe = Math.min(eintrag.stufe + 1, LEITNER_TAGE.length - 1);
-  } else if (urteil === "teilweise") {
-    eintrag.stufe = Math.max(1, eintrag.stufe);
-  } else {
-    eintrag.stufe = 0;
-  }
-
-  eintrag.faellig = Date.now() + LEITNER_TAGE[eintrag.stufe] * TAG_MS;
+  if (urteil === "richtig") eintrag.richtig += 1;
+  eintrag.punkte = [...(eintrag.punkte || []), PUNKTE[urteil] ?? 0].slice(-VERLAUF_MAX);
+  eintrag.runde = stand.runden || 0;
   stand.fragen[id] = eintrag;
   stand.verlauf.push({ id, urteil, prozent, zeit: Date.now() });
   if (stand.verlauf.length > 2000) stand.verlauf = stand.verlauf.slice(-2000);
@@ -13858,46 +13871,48 @@ function markierteIds() {
   return Object.keys(stand.fragen).filter((id) => stand.fragen[id].markiert);
 }
 
-/** Ids aller Fragen, deren Wiedervorlage erreicht ist. */
-function faelligeIds(alleIds) {
+/** Anteil richtig der letzten Versuche, null = noch nie gestellt. */
+function quoteVon(e) {
+  if (!e || !e.versuche || !e.punkte || !e.punkte.length) return null;
+  return e.punkte.reduce((a, b) => a + b, 0) / e.punkte.length;
+}
+/** good | mid | bad | neu */
+function klasseVon(e) {
+  const q = quoteVon(e);
+  if (q === null) return "neu";
+  return q >= 0.8 ? "good" : q >= 0.4 ? "mid" : "bad";
+}
+function maxPause(bestand, plaetze) { return 3 * Math.ceil(bestand / Math.max(1, plaetze)); }
+function prioritaet(e, jetzt, grenze) {
+  if (!e || !e.versuche) return 1e9 + Math.random();
+  const pause = jetzt - (e.runde ?? 0);
+  if (pause >= grenze) return 1e6 + pause + Math.random();
+  const gewicht = 1 + FEHLER_FAKTOR * (1 - (quoteVon(e) ?? 0)) + (e.markiert ? 1 : 0);
+  return pause * gewicht * (0.9 + 0.2 * Math.random());
+}
+
+/** Schwach (unter 80 %) oder überfällig, für den Modus Wiederholung. */
+function schwacheIds(alleIds) {
   const stand = lesen();
-  const jetzt = Date.now();
+  const jetzt = (stand.runden || 0) + 1;
+  const grenze = maxPause(alleIds.length, MIX_UMFANG);
   return alleIds.filter((id) => {
     const e = stand.fragen[id];
     if (!e || !e.versuche) return false;
-    return e.faellig <= jetzt;
+    return quoteVon(e) < 0.8 || jetzt - (e.runde ?? 0) >= grenze;
   });
 }
 
-/** Gewicht einer Frage für die Auswahl: schwach beantwortete kommen häufiger. */
-function gewicht(id) {
-  const e = fragenstand(id);
-  if (!e.versuche) return GEWICHTE.nieBeantwortet;
-  let g;
-  if (e.letztesUrteil === "richtig") g = GEWICHTE.zuletztRichtig;
-  else if (e.letztesUrteil === "teilweise") g = GEWICHTE.zuletztTeilweise;
-  else g = GEWICHTE.zuletztFalsch;
-  if (e.markiert) g += GEWICHTE.markiert;
-  return g;
-}
-
-/** Zieht ohne Zurücklegen aus einer Liste, gewichtet nach Lernstand. */
+/** Wählt die anzahl Fragen mit der höchsten Priorität, in dieser Reihenfolge. */
 function gewichtetZiehen(ids, anzahl) {
-  const rest = [...ids];
-  const gezogen = [];
-  while (gezogen.length < anzahl && rest.length > 0) {
-    const gewichte = rest.map((id) => gewicht(id));
-    const summe = gewichte.reduce((a, b) => a + b, 0);
-    let wurf = Math.random() * summe;
-    let index = 0;
-    while (index < rest.length - 1) {
-      wurf -= gewichte[index];
-      if (wurf <= 0) break;
-      index += 1;
-    }
-    gezogen.push(rest.splice(index, 1)[0]);
-  }
-  return gezogen;
+  const stand = lesen();
+  const jetzt = (stand.runden || 0) + 1;
+  const grenze = maxPause(ids.length, Math.min(anzahl, ids.length));
+  return ids
+    .map((id) => [id, prioritaet(stand.fragen[id], jetzt, grenze)])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, anzahl)
+    .map(([id]) => id);
 }
 
 /** Kennzahlen je Themengebiet für die Fortschrittsansicht. */
@@ -13913,7 +13928,7 @@ function fortschritt(fragen) {
         richtig: 0,
         teilweise: 0,
         falsch: 0,
-        faellig: 0,
+        summe: 0,
       });
     }
     const z = jeGebiet.get(frage.themengebiet);
@@ -13921,10 +13936,11 @@ function fortschritt(fragen) {
     const e = stand.fragen[frage.id];
     if (e && e.versuche) {
       z.bearbeitet += 1;
-      if (e.letztesUrteil === "richtig") z.richtig += 1;
-      else if (e.letztesUrteil === "teilweise") z.teilweise += 1;
+      const k = klasseVon(e);
+      if (k === "good") z.richtig += 1;
+      else if (k === "mid") z.teilweise += 1;
       else z.falsch += 1;
-      if (e.faellig <= Date.now()) z.faellig += 1;
+      z.summe += quoteVon(e) ?? 0;
     }
   }
   return jeGebiet;
@@ -13937,7 +13953,7 @@ function schwaechstesGebiet(fragen) {
   let schlechtesteQuote = 2;
   for (const [gebiet, z] of zahlen) {
     if (!z.bearbeitet) continue;
-    const quote = z.richtig / z.bearbeitet;
+    const quote = z.summe / z.bearbeitet;
     if (quote < schlechtesteQuote) {
       schlechtesteQuote = quote;
       schlechtestes = gebiet;
@@ -13961,12 +13977,13 @@ function standEinlesen(text) {
   if (!stand || typeof stand !== "object" || typeof stand.fragen !== "object") {
     throw new Error("Die Datei enthält keinen gültigen Lernstand.");
   }
-  schreiben({
-    version: 1,
+  schreiben(migrieren({
+    version: stand.version || 1,
+    runden: stand.runden || 0,
     einstellungen: stand.einstellungen || { strenge: "normal" },
     fragen: stand.fragen || {},
     verlauf: Array.isArray(stand.verlauf) ? stand.verlauf : [],
-  });
+  }));
   return Object.keys(stand.fragen || {}).length;
 }
 
@@ -14147,19 +14164,24 @@ function rundeStarten() {
     ids = mixZusammenstellen();
   } else if (zustand.modus === "wiederholung") {
     const alle = zustand.daten.fragen.map((f) => f.id);
-    ids = gewichtetZiehen(faelligeIds(alle), 20);
+    ids = gewichtetZiehen(schwacheIds(alle), WDH_UMFANG);
   } else if (zustand.modus === "markierte") {
     ids = gewichtetZiehen(markierteIds(), 30);
   }
 
   if (ids.length === 0) {
     const texte = {
-      wiederholung: "Zurzeit ist keine Frage zur Wiederholung fällig.",
+      wiederholung: "Zurzeit gibt es keine schwachen oder überfälligen Fragen.",
       markierte: "Es ist noch keine Frage gemerkt.",
     };
     toast(texte[zustand.modus] || "Für diese Auswahl gibt es keine Fragen.");
     return;
   }
+
+  // Rundenzähler für die Pausen der gewichteten Auswahl
+  const st = lesen();
+  st.runden = (st.runden || 0) + 1;
+  schreiben(st);
 
   zustand.runde = ids.slice();
   zustand.index = 0;
@@ -14560,7 +14582,7 @@ function fortschrittZeigen() {
     richtig += z.richtig;
   }
   $("fortschritt-lede").textContent = bearbeitet
-    ? `${bearbeitet} von ${zustand.daten.fragen.length} Fragen bearbeitet, davon ${richtig} zuletzt richtig.`
+    ? `${bearbeitet} von ${zustand.daten.fragen.length} Fragen bearbeitet, davon ${richtig} sicher. ${lesen().runden || 0} ${(lesen().runden || 0) === 1 ? "Runde" : "Runden"} gespielt. Die Prozentzahl bezieht sich auf die letzten fünf ersten Versuche.`
     : "Noch keine Frage bearbeitet.";
 
   for (const gebiet of zustand.daten.themengebiete) {
@@ -14573,7 +14595,7 @@ function fortschrittZeigen() {
     const h3 = document.createElement("h3");
     h3.textContent = gebiet.titel;
     const span = document.createElement("span");
-    span.textContent = `${z.bearbeitet}/${z.gesamt}${z.faellig ? ` · ${z.faellig} fällig` : ""}`;
+    span.textContent = `${z.bearbeitet}/${z.gesamt}${z.falsch ? ` · ${z.falsch} unsicher` : ""}`;
     kopf.append(h3, span);
     block.appendChild(kopf);
 
@@ -14585,17 +14607,14 @@ function fortschrittZeigen() {
       const kachel = document.createElement("button");
       kachel.type = "button";
       kachel.className = "tile";
-      if (stand.versuche) {
-        if (stand.letztesUrteil === "richtig") kachel.classList.add("good");
-        else if (stand.letztesUrteil === "teilweise") kachel.classList.add("mid");
-        else kachel.classList.add("bad");
-      }
+      const k = klasseVon(stand);
+      if (k !== "neu") kachel.classList.add(k);
       kachel.innerHTML = "<b></b><small></small>";
       kachel.querySelector("b").textContent = String(i + 1);
-      kachel.querySelector("small").textContent = stand.versuche
-        ? `S${stand.stufe}`
-        : "neu";
-      kachel.title = frage.frage;
+      kachel.querySelector("small").textContent = k === "neu"
+        ? "neu"
+        : `${Math.round(quoteVon(stand) * 100)} %`;
+      kachel.title = frage.frage + (k === "neu" ? "" : `\n${stand.versuche}× gestellt`);
       kachel.addEventListener("click", () => {
         zustand.aktuell = frage;
         loesungOeffnen();
