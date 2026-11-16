@@ -1,0 +1,126 @@
+[
+  {
+    "id": "ankern-17",
+    "notiz": "Meldung 16.11.2026: Heck und Lateraldruckpunkt umschrieben, Folge fehlt",
+    "antwort": "Hier bei wird das Heck des Schiffes häufig aus dem Wasser gehoben. Damit verringert sich der Lateralplan des Schiffes und der Lateraldruckpunkt wandert zum Bug.",
+    "erwartet": "teilweise",
+    "konzepte": [
+      "k1",
+      "k2"
+    ]
+  },
+  {
+    "id": "ankern-17",
+    "notiz": "wie oben, mit Folge",
+    "antwort": "Hier bei wird das Heck des Schiffes häufig aus dem Wasser gehoben. Damit verringert sich der Lateralplan des Schiffes und der Lateraldruckpunkt wandert zum Bug. Das Schiff wird luvgieriger.",
+    "erwartet": "richtig",
+    "konzepte": [
+      "k1",
+      "k2",
+      "k3"
+    ]
+  },
+  {
+    "id": "ankern-17",
+    "notiz": "falsche Richtung darf nicht zählen",
+    "antwort": "Der Lateralschwerpunkt wandert nach achtern.",
+    "erwartet": "falsch",
+    "konzepte": []
+  },
+  {
+    "id": "sar-09",
+    "notiz": "Umschreibung",
+    "antwort": "Er muss den Bezugspunkt bestimmen und das Gebiet, in dem sich die Person am wahrscheinlichsten aufhält.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "sar-03",
+    "notiz": "Umschreibung",
+    "antwort": "Den Notruf widerrufen, damit die anderen Schiffe und Retter die Suche einstellen.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "sar-03",
+    "notiz": "Kurzform",
+    "antwort": "Mayday zurücknehmen.",
+    "erwartet": "teilweise"
+  },
+  {
+    "id": "sar-08",
+    "notiz": "Umschreibung",
+    "antwort": "Sitz ist in Bremen. Die Seenotleitung (MRCC) plant, leitet und koordiniert die Rettung und dokumentiert alles bis zum Abschluss.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "segelfahrzeug-01",
+    "notiz": "Stichworte mit Abwandlungen",
+    "antwort": "Ölstand, Kühlwasserstand, Stopfbüchse, Bilgen, Batterien und Lichtmaschine, Diesel im Tank, Saugkörbe der Lenzpumpen, Keilriemen",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "segelfahrzeug-02",
+    "notiz": "Umschreibung",
+    "antwort": "Vorher: keine Leinen im Wasser, niemand im Motorraum, Batterieschalter richtig, Schalthebel auf neutral. Nachher: Kühlwasser kommt am Auspuff raus, Ladekontrollleuchte, Drehzahl, Öldruckanzeige.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "wetter-06",
+    "notiz": "Umschreibung",
+    "antwort": "Er reduziert die Drift nach Lee und hält Bug oder Heck in den Wind, so dass das Schiff nicht quer zur See liegt.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "wetter-07",
+    "notiz": "Umschreibung",
+    "antwort": "Leinen sind schneller und einfacher auszubringen, immer an Bord und lassen sich besser regulieren.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "wetter-08",
+    "notiz": "Umschreibung",
+    "antwort": "Das Schiff wird zu stark festgehalten, die See schlägt hart aufs Heck und ins Cockpit, beim Rückwärtstreiben kann das Ruder brechen und Beschläge reissen aus.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "grossschiff-03",
+    "notiz": "Umschreibung",
+    "antwort": "Nach der IMO-Empfehlung darf der tote Winkel höchstens zwei Schiffslängen bzw. 500 m betragen. Auch die See-BG empfiehlt das.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "grossschiff-04",
+    "notiz": "Umschreibung",
+    "antwort": "Das Heck schert weit nach Steuerbord aus, die Fahrspur wird breiter. Man muss genug Abstand lassen.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "sar-01",
+    "notiz": "Antwort aus dem Unterricht",
+    "antwort": "Ausguck in Quadranten einteilen. Position und Beginn der Suche ins Logbuch. Unter Deck Koje und Decken vorbereiten. Leine mit grossem Auge bereithalten. Beiboot klarmachen, Bergenetz oder Leiter vorbereiten. Ein gesicherter Rettungsschwimmer steht bereit. Beim Anbordholen den Grossbaum sichern.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "sar-02",
+    "notiz": "Umschreibung",
+    "antwort": "Man sucht auch nach den 12 Stunden weiter, weil Menschen schon viel länger überlebt haben. Es hängt vom Wetter, der Tageszeit und der Jahreszeit ab.",
+    "erwartet": "richtig"
+  },
+  {
+    "id": "wetter-06",
+    "notiz": "falsche Antwort",
+    "antwort": "Der Treibanker dient zum Ankern im Hafen.",
+    "erwartet": "falsch"
+  },
+  {
+    "id": "sar-09",
+    "notiz": "falsche Antwort",
+    "antwort": "Er muss die Rettungsinsel klarmachen und die Crew wecken.",
+    "erwartet": "falsch"
+  },
+  {
+    "id": "erstehilfe-04",
+    "notiz": "Verneinung nicht umdrehen",
+    "antwort": "Alkohol geben zum Aufwärmen.",
+    "konzepte": []
+  }
+]

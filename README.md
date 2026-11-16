@@ -186,9 +186,49 @@ Die Antwort wird vereinheitlicht: Kleinschreibung, „ß“ zu „ss“, Umlautf
 Satzzeichen zu Leerzeichen. Satzschlusszeichen bleiben als Grenzmarke erhalten,
 damit eine Verneinung nicht in den nächsten Satz hineinwirkt.
 
-Ein Suchwort ab sechs Zeichen greift auch in Zusammensetzungen („lenzpump“
-findet „Handlenzpumpe“), ab fünf Zeichen am Wortanfang, darunter nur genau.
-Bei Wortfolgen dürfen bis zu zwei beliebige Wörter dazwischenstehen.
+Abkürzungen („bzw.“, „z. B.“, „ca.“) und Dezimalpunkte beenden keinen Satz.
+Füllwörter (der, die, das, des, wird, sich, zum, nach …) werden in Antwort und
+Suchbegriff übergangen. Verneinungen und Richtungswörter bleiben erhalten.
+
+Ein Suchwort passt auf ein Wort der Antwort,
+
+- unter fünf Zeichen nur genau, bei fünf Zeichen am Wortanfang,
+- ab sechs Zeichen auch in Zusammensetzungen („lenzpump“ findet „Handlenzpumpe“),
+- mit anderer Wortendung („verstärkt“, „verstärken“, „Verstärkung“),
+- ab neun Zeichen Wortstamm mit einem Tippfehler, ab 13 mit zwei. Erster
+  und letzter Buchstabe müssen stimmen, und ein „un“ darf nicht der
+  Unterschied sein („manövrierunfähig“ ist nicht „manövrierfähig“).
+
+Ein Suchbegriff aus mehreren Wörtern trifft, wenn alle Wörter im selben Satz
+und nah beieinander stehen (bis zu drei Wörter Spielraum). Die Reihenfolge ist
+frei: „Heck wird aus dem Wasser gehoben“ und „aus dem Wasser gehoben wird das
+Heck“ zählen gleich.
+
+**Synonyme** gelten für alle Fragen und stehen als Liste `SYNONYME` im
+Programm (z. B. vorn = Bug = Vorschiff, Lateralschwerpunkt = Lateraldruckpunkt,
+verstärkt = erhöht = stärker). Nur echte Entsprechungen aufnehmen.
+
+**Verneinung:** Steht bis zu drei Wörter vor dem Treffer oder innerhalb des
+Treffers „nicht“, „kein“, „ohne“ …, zählt er nicht. „Nicht nur“ verneint nicht.
+Ausgenommen sind Konzepte mit `verneinend` und Suchbegriffe, die selbst eine
+Verneinung enthalten („nicht quer“).
+
+### Bewertung prüfen
+
+```bash
+node tools/pruefen.mjs     # oder: npm test
+```
+
+Das Skript liest die `index.html` direkt und prüft:
+
+1. Jede Musterlösung besteht ihre eigene Frage.
+2. Gegenprobe: Musterlösungen fremder Fragen sollen „falsch“ ergeben.
+   Liegt der Anteil über 2 %, sind Suchbegriffe zu allgemein.
+3. Testfälle aus `tests/faelle.json`: echte Antworten mit erwartetem Urteil
+   (`erwartet`) und optional den erwarteten Konzepten (`konzepte`).
+
+Wird eine Antwort falsch bewertet, die Antwort als neuen Testfall in
+`tests/faelle.json` eintragen, Suchbegriffe ergänzen und erneut prüfen.
 
 Quote = getroffene Konzepte / Soll, gedeckelt bei 0,6 falls ein Kernpunkt
 fehlt, minus 0,10 je genutztem Hinweis.

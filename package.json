@@ -5,13 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "node tools/build.mjs && node tools/bundle.mjs",
-    "validate": "node tools/validate.mjs",
-    "test": "node --test tests/*.test.mjs",
-    "pruefen": "npm run build && npm run validate && npm test",
+    "test": "node tools/pruefen.mjs",
+    "pruefen": "node tools/pruefen.mjs",
     "start": "python3 -m http.server 8080"
-  },
-  "devDependencies": {
-    "jsdom": "^30.0.0"
   }
 }
